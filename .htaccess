@@ -1,0 +1,17 @@
+# Ginger Sync — deny direct access to sensitive files
+<FilesMatch "\.(env|env\.example|sql|py|md)$">
+    Require all denied
+</FilesMatch>
+
+# Deny access to config/ and lib/ directories
+RedirectMatch 403 ^/jupiter/ginger-sync/(config|lib)/
+
+# Default document
+DirectoryIndex index.php
+
+# Basic security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

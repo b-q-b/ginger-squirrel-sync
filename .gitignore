@@ -1,0 +1,22 @@
+# Secrets — NEVER commit
+.env
+
+# Meeting audio uploads (per-user data, served via authed PHP endpoint)
+data/
+
+# Local OS junk
+.DS_Store
+Thumbs.db
+
+# Python deploy script artifacts
+__pycache__/
+*.pyc
+
+# Editor noise
+.vscode/
+.idea/
+*.swp
+
+# Build / temp
+*.log
+*.zip
