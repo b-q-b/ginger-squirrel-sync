@@ -206,6 +206,56 @@
 
     a.link { color: var(--accent); text-decoration: none; }
     a.link:hover { text-decoration: underline; }
+
+    /* ── Prompt brief ── */
+    .brief {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 12px;
+        padding: 18px 20px 6px;
+        position: relative;
+    }
+    .brief .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 6px;
+    }
+    .brief .header-row .hint {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+    }
+    .brief pre {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px 18px;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--text);
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        margin: 8px 0 14px;
+        max-height: 520px;
+        overflow-y: auto;
+    }
+    .copy-btn {
+        background: var(--accent);
+        color: #fff;
+        border: 0;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        letter-spacing: 0.05em;
+    }
+    .copy-btn:hover { background: var(--accent-hover); }
+    .copy-btn.copied { background: var(--ok); }
 </style>
 </head>
 <body>
@@ -290,6 +340,117 @@
     <li><span class="mark done">✓</span>Makefile: <code>make api</code>, <code>make web</code>, <code>make db-up</code>, <code>make build</code></li>
 </ul>
 </div>
+
+<!-- ── Paste-ready brief for the other Mac's Claude ──────────── -->
+<h2>Brief to paste into Claude on the other Mac</h2>
+<div class="brief">
+    <div class="header-row">
+        <p style="font-size:12.5px;color:var(--muted);">Copy this and paste it as your first message to Claude on the old Mac. It's self-contained.</p>
+        <button class="copy-btn" id="copy-btn" onclick="copyBrief()">COPY</button>
+    </div>
+    <pre id="brief-text">You're picking up work on Ginger Squirrel Sync — a ClickUp ↔ Trello two-way sync
+platform with a Hot Plate Kanban module and a Meetings module (audio upload →
+AssemblyAI transcription → OpenRouter summary).
+
+The other Mac just shipped a big update to v1 (PHP). Your job is to deploy it
+to production, because you're the only Mac with the FTP + Supabase credentials.
+
+## Where things are
+
+- Project: ~/Library/CloudStorage/GoogleDrive-jlnbbbrr@gmail.com/My Drive/Geek/CodeFold/ginger-squirrel-sync/
+  (Google Drive synced from the other Mac.)
+- GitHub: https://github.com/b-q-b/ginger-squirrel-sync
+- Live production: https://bqbstudio.com/jupiter/ginger-sync/
+- Credentials: ~/Documents/bqbqb/.env (FTP + Supabase, already on your Mac)
+- The detailed status doc is STATUS.html in the project root — open it in a
+  browser first to get full context.
+
+## What the other Mac just built
+
+- v1 (PHP) — restructured into `legacy-php/` subfolder. NEW features added on top
+  of the existing sync engine:
+    * Hot Plate — Kanban board (To Do / In Progress / Waiting / Done), drag-drop,
+      categories, priority, due dates, energy level.
+    * Meetings — audio upload, AssemblyAI (universal-3-pro, speaker labels),
+      OpenRouter Claude analysis (summary / decisions / action items / questions),
+      bidirectional link to Hot Plate items.
+- v2 (scaffold only) — .NET 9 API + Next.js 16 React 19 in `api/` and `web/`.
+  DO NOT DEPLOY v2 YET. Bodies are NotImplementedException. That's for later.
+
+## What you need to do, in order
+
+1. `git pull` inside the project folder so you have the latest.
+
+2. In the Supabase SQL editor for the `ginger_sync` schema, run (in order):
+       legacy-php/migration_phase3.sql   — Hot Plate tables
+       legacy-php/migration_phase4.sql   — Meetings table
+
+3. Add two API keys to the SERVER's .env (the one at /jupiter/ginger-sync/.env
+   on the bqbstudio FTP — there's a helper pattern in legacy-php/deploy.py
+   for editing it via FTP without downloading the file). The keys are:
+       ASSEMBLYAI_API_KEY=<from assemblyai.com/app/account>
+       OPENROUTER_API_KEY=<reuse the one you already have for other projects>
+
+   You may need to ask the user for the AssemblyAI key if it's not in
+   ~/Documents/bqbqb/.env yet. The OpenRouter key should already be set up.
+
+4. Deploy the PHP code to the server:
+       cd legacy-php
+       python3 deploy.py
+
+   This pushes everything under legacy-php/ to /jupiter/ginger-sync/ via FTP.
+   Both .env and data/ are excluded from upload.
+
+5. Smoke test end-to-end:
+   a. Log in to https://bqbstudio.com/jupiter/ginger-sync/ — the password is
+      the one set on the dashboard (the user knows it).
+   b. Visit /pages/hot-plate.php — verify the Kanban board renders, create
+      a test task, drag it between columns. (No drag should produce a network
+      error.)
+   c. Visit /pages/meetings.php → click "+ New meeting".
+   d. Drop a short voice memo file (.m4a or .mp3, ideally 30-60 seconds).
+   e. Watch the upload page — the status should progress
+      Queued → Transcribing → Analysing → Ready (about 1–3 minutes total).
+   f. After redirect to the meeting detail page, verify:
+        - audio plays
+        - transcript is shown with [Speaker 1] / [Speaker 2] labels (if 2+ voices)
+        - the AI sections (Summary, Decisions, Action items, Questions) render
+        - linking the meeting to your Hot Plate test task works
+   g. Visit /pages/items.php — old sync stuff still works.
+   h. Visit /pages/logs.php — confirm cron events from the 5-min reconciler
+      are still arriving (every 5 minutes, source=reconcile_cron).
+
+6. Report back to the user with:
+   - Confirmation of what worked
+   - Screenshots / error messages if anything broke
+   - Anything weird in the AI summary (the OpenRouter prompt is in
+     legacy-php/lib/analyze.php — easy to tweak)
+
+## Don't do
+
+- Don't touch api/ or web/ — that's Phase B and lives on the OTHER Mac
+  (where .NET will be installed). It's safe to read for reference but
+  don't build, run, or modify yet.
+- Don't push to main without committing changes locally first. Use the
+  same Co-Authored-By footer pattern the other Mac used.
+- Don't expose ASSEMBLYAI_API_KEY or OPENROUTER_API_KEY in commits.
+
+If anything fails: dig in, fix the PHP code in legacy-php/, redeploy with
+`python3 deploy.py`, commit + push. The PHP stack is well-trodden territory
+on this Mac.</pre>
+</div>
+
+<script>
+function copyBrief() {
+    const text = document.getElementById('brief-text').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.classList.add('copied');
+        btn.textContent = 'COPIED ✓';
+        setTimeout(() => { btn.classList.remove('copied'); btn.textContent = 'COPY'; }, 1800);
+    });
+}
+</script>
 
 <!-- ── What the OLD MAC needs to do ─────────────────────────── -->
 <h2>For the <em>old Mac</em> (the one with bqbqb FTP/Supabase creds)</h2>
