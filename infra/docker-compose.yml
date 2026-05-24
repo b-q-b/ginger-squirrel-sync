@@ -1,0 +1,17 @@
+# Local dev Postgres. Production uses Supabase-managed Postgres.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ginger_sync
+    ports:
+      - "5433:5432"   # 5433 host-side to avoid clashing with a Supabase tunnel
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../api/db/migrations:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  pgdata:
