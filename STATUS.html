@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ginger Squirrel Sync — Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+    :root {
+        --bg: #fafaf7;
+        --surface: #ffffff;
+        --border: #ece8e0;
+        --text: #1f1a14;
+        --muted: #8a7c6b;
+        --accent: #d97a3a;
+        --accent-hover: #b8622a;
+        --accent-soft: #fdf1e7;
+        --ok: #16a34a;
+        --warn: #d97706;
+        --danger: #dc2626;
+        --font: 'Inter', system-ui, -apple-system, sans-serif;
+        --mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+        font-size: 14.5px;
+    }
+
+    .page { max-width: 900px; margin: 0 auto; padding: 40px 28px 80px; }
+
+    header.top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 22px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 28px;
+    }
+    header.top h1 {
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 4px;
+    }
+    header.top h1 .sq { color: var(--accent); }
+    header.top .sub { color: var(--muted); font-size: 13.5px; }
+    header.top .meta {
+        text-align: right;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--muted);
+        line-height: 1.7;
+        white-space: nowrap;
+    }
+    header.top .meta .when { color: var(--text); }
+    header.top a { color: var(--accent); text-decoration: none; }
+    header.top a:hover { text-decoration: underline; }
+
+    h2 {
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 28px 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    h2::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 16px;
+        background: var(--accent);
+        border-radius: 2px;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 20px;
+    }
+    .card h3 {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .card h3 .tag {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 500;
+        padding: 1px 7px;
+        border-radius: 999px;
+        margin-left: 6px;
+        vertical-align: 2px;
+    }
+    .tag.prod { background: #ecfdf5; color: #166534; }
+    .tag.dev  { background: var(--accent-soft); color: var(--accent-hover); }
+    .tag.idle { background: #f3f4f6; color: var(--muted); }
+    .card p { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+    .card .kbd {
+        font-family: var(--mono);
+        font-size: 12px;
+        background: var(--bg);
+        padding: 2px 7px;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+        word-break: break-all;
+    }
+
+    ul.check { list-style: none; padding: 0; }
+    ul.check li {
+        padding: 7px 0;
+        border-bottom: 1px dotted var(--border);
+        font-size: 13.5px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    ul.check li:last-child { border-bottom: 0; }
+    ul.check li .mark {
+        flex: 0 0 18px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 1px;
+    }
+    .mark.done { background: var(--ok); color: #fff; }
+    .mark.todo { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
+    .mark.warn { background: #fef3c7; color: var(--warn); border: 1px solid var(--warn); }
+    ul.check li small { color: var(--muted); font-size: 11.5px; margin-left: 4px; }
+
+    pre.cmd {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.6;
+        overflow-x: auto;
+        margin: 10px 0;
+        color: var(--text);
+    }
+    pre.cmd .comment { color: var(--muted); }
+    pre.cmd .accent { color: var(--accent); }
+
+    .pill {
+        display: inline-block;
+        padding: 2px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+        font-family: var(--mono);
+    }
+    .pill.ok { background: #ecfdf5; color: #166534; }
+    .pill.warn { background: #fef3c7; color: var(--warn); }
+    .pill.idle { background: #f3f4f6; color: var(--muted); }
+
+    footer.bottom {
+        margin-top: 40px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    footer.bottom a { color: var(--accent); text-decoration: none; }
+
+    .legend-row {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-top: 8px;
+    }
+    .legend-row .item { display: flex; align-items: center; gap: 6px; }
+    .legend-row .swatch {
+        width: 12px; height: 12px; border-radius: 50%;
+        display: inline-block;
+    }
+    .swatch.ok { background: var(--ok); }
+    .swatch.todo { background: var(--accent-soft); border: 1px solid var(--accent); }
+    .swatch.warn { background: #fef3c7; border: 1px solid var(--warn); }
+
+    a.link { color: var(--accent); text-decoration: none; }
+    a.link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="top">
+    <div>
+        <h1>ginger <span class="sq">squirrel</span> sync</h1>
+        <div class="sub">ClickUp ↔ Trello two-way sync · Hot Plate Kanban · meeting transcription</div>
+        <div class="legend-row" style="margin-top:10px;">
+            <span class="item"><span class="swatch ok"></span> done</span>
+            <span class="item"><span class="swatch todo"></span> to do</span>
+            <span class="item"><span class="swatch warn"></span> needs your action</span>
+        </div>
+    </div>
+    <div class="meta">
+        <div class="when">last updated</div>
+        <div>Sunday, 24 May 2026 · 22:40 +08</div>
+        <div style="margin-top:8px;">
+            <a href="https://github.com/b-q-b/ginger-squirrel-sync" target="_blank">github.com/b-q-b/ginger-squirrel-sync</a><br>
+            <a href="https://bqbstudio.com/jupiter/ginger-sync/" target="_blank">bqbstudio.com/jupiter/ginger-sync/</a>
+        </div>
+    </div>
+</header>
+
+<!-- ── Where things live ─────────────────────────────────────── -->
+<h2>Where things live</h2>
+<div class="grid-2">
+    <div class="card">
+        <h3>PHP v1 <span class="tag prod">production</span></h3>
+        <p><strong>Local:</strong> <span class="kbd">CodeFold/ginger-squirrel-sync/legacy-php/</span></p>
+        <p><strong>Live:</strong> <span class="kbd">https://bqbstudio.com/jupiter/ginger-sync/</span></p>
+        <p><strong>Stack:</strong> PHP 8 · Supabase Postgres · vanilla JS · cron on Zume</p>
+        <p style="margin-top:8px;color:var(--text);">This is what's running for Mark right now. Stays live until v2 reaches parity.</p>
+    </div>
+    <div class="card">
+        <h3>.NET + React v2 <span class="tag dev">scaffold</span></h3>
+        <p><strong>Local:</strong> <span class="kbd">CodeFold/ginger-squirrel-sync/{api, web}/</span></p>
+        <p><strong>Live:</strong> <em>not yet deployed</em> — Hostinger VPS</p>
+        <p><strong>Stack:</strong> ASP.NET Core 9 · EF Core · Postgres · Next.js 16 · React 19 · Tailwind 4 · TanStack Query</p>
+        <p style="margin-top:8px;color:var(--text);">Same stack as Quotinc. Skeleton committed; bodies are <code>NotImplementedException</code>.</p>
+    </div>
+</div>
+
+<!-- ── What ships in PHP v1 ───────────────────────────────────── -->
+<h2>What ships in PHP v1 — production-ready</h2>
+<div class="card">
+<ul class="check">
+    <li><span class="mark done">✓</span>Bidirectional ClickUp ↔ Trello task sync with persistence (no overwrite loops)</li>
+    <li><span class="mark done">✓</span>Canonical-hash + timestamp-aware reconciler (last-write-wins per pair)</li>
+    <li><span class="mark done">✓</span>Echo-loop prevention: hash debounce + actor filter + origin tag</li>
+    <li><span class="mark done">✓</span>Content-equality short-circuit (cron stays quiet when nothing's changed)</li>
+    <li><span class="mark done">✓</span>Subtasks ↔ Trello checklist items (bidirectional)</li>
+    <li><span class="mark done">✓</span>Label sync with color preservation (find-or-create labels on Trello board)</li>
+    <li><span class="mark done">✓</span>Shadow <span class="kbd">tasks</span> table — fast Items page, no live API calls per render</li>
+    <li><span class="mark done">✓</span>Webhooks (Trello HMAC-SHA1, ClickUp HMAC-SHA256) + one-click registration</li>
+    <li><span class="mark done">✓</span>Reconciliation cron every 5 min on Zume — running</li>
+    <li><span class="mark done">✓</span>Polling-vs-realtime mode indicator on dashboard + settings</li>
+    <li><span class="mark done">✓</span>Hot Plate Kanban (To Do · In Progress · Waiting · Done) with drag-drop, categories, priority, due dates, energy level</li>
+    <li><span class="mark done">✓</span>Meetings module — upload audio → AssemblyAI (universal-3-pro, speaker labels) → OpenRouter Claude → structured analysis (summary · decisions · action items · open questions)</li>
+    <li><span class="mark done">✓</span>Meetings can be linked to Hot Plate items</li>
+    <li><span class="mark done">✓</span>CSRF, password-gated dashboard, change-password flow</li>
+</ul>
+</div>
+
+<!-- ── v2 scaffold ──────────────────────────────────────────── -->
+<h2>What's scaffolded in v2 — .NET 9 + Next.js 16</h2>
+<div class="card">
+<ul class="check">
+    <li><span class="mark done">✓</span>Monorepo layout: <span class="kbd">api/</span> · <span class="kbd">web/</span> · <span class="kbd">legacy-php/</span> · <span class="kbd">infra/</span></li>
+    <li><span class="mark done">✓</span>.NET 9 solution: <strong>GingerSync.Api</strong> (Web), <strong>GingerSync.Core</strong> (domain), <strong>GingerSync.Infrastructure</strong> (adapters)</li>
+    <li><span class="mark done">✓</span>Domain entities ported: <code>Mapping</code>, <code>SyncMap</code>, <code>SyncEvent</code>, <code>HotPlateItem</code> + <code>Category</code>, <code>Meeting</code> + <code>MeetingAnalysis</code></li>
+    <li><span class="mark done">✓</span>Service interfaces: <code>ISyncEngine</code>, <code>ITranscriber</code>, <code>IMeetingAnalyzer</code>, <code>IClickUpClient</code>, <code>ITrelloClient</code></li>
+    <li><span class="mark done">✓</span>EF Core <code>DbContext</code> with all tables, JSONB columns, indexes, <span class="kbd">ginger_sync</span> schema</li>
+    <li><span class="mark done">✓</span>Minimal-API endpoint groups: <span class="kbd">/api/mappings</span>, <span class="kbd">/api/hot-plate/*</span>, <span class="kbd">/api/meetings</span>, <span class="kbd">/api/sync/*</span>, <span class="kbd">/api/webhooks/*</span></li>
+    <li><span class="mark done">✓</span>Typed HTTP client classes for AssemblyAI, OpenRouter, ClickUp, Trello (stubs)</li>
+    <li><span class="mark done">✓</span>Next.js 16 App Router with Tailwind v4 + TanStack Query + design tokens matching the offer aesthetic</li>
+    <li><span class="mark done">✓</span><code>web/lib/types.ts</code> mirrors .NET DTOs — lockstep contract</li>
+    <li><span class="mark done">✓</span><code>web/lib/api.ts</code> fetch wrapper + Next dev rewrites <span class="kbd">/api/*</span> → .NET</li>
+    <li><span class="mark done">✓</span>Postgres initial migration <span class="kbd">api/db/migrations/001_init.sql</span></li>
+    <li><span class="mark done">✓</span>Local-dev docker-compose for Postgres (offline coding)</li>
+    <li><span class="mark done">✓</span>Makefile: <code>make api</code>, <code>make web</code>, <code>make db-up</code>, <code>make build</code></li>
+</ul>
+</div>
+
+<!-- ── What the OLD MAC needs to do ─────────────────────────── -->
+<h2>For the <em>old Mac</em> (the one with bqbqb FTP/Supabase creds)</h2>
+
+<div class="card">
+<ul class="check">
+    <li><span class="mark warn">!</span>
+        <div>
+            <strong>1) Pull the latest from GitHub</strong>
+            <small>so this folder has the same state on both Macs</small>
+            <pre class="cmd"><span class="comment"># on the old Mac, from CodeFold/Ginger Sync/ (the old PHP folder)</span>
+<span class="comment"># NOTE: the project moved — clone the new monorepo:</span>
+cd ~/.../CodeFold
+git clone https://github.com/b-q-b/ginger-squirrel-sync.git
+cd ginger-squirrel-sync</pre>
+        </div>
+    </li>
+
+    <li><span class="mark warn">!</span>
+        <div>
+            <strong>2) Deploy the new PHP code (Hot Plate + Meetings)</strong>
+            <small>so production catches up to legacy-php/</small>
+            <pre class="cmd"><span class="comment"># From inside legacy-php/ on the old Mac:</span>
+cd legacy-php
+python3 deploy.py    <span class="comment"># uses ~/Documents/bqbqb/.env on the old Mac</span></pre>
+        </div>
+    </li>
+
+    <li><span class="mark warn">!</span>
+        <div>
+            <strong>3) Run the new Supabase migrations</strong>
+            <small>Hot Plate + Meetings tables — Supabase SQL editor</small>
+            <pre class="cmd"><span class="comment"># Run in order. Phase 3 adds hot_plate_*, phase 4 adds meetings.</span>
+legacy-php/migration_phase3.sql
+legacy-php/migration_phase4.sql</pre>
+        </div>
+    </li>
+
+    <li><span class="mark warn">!</span>
+        <div>
+            <strong>4) Add two keys to the server .env</strong>
+            <small>Meetings module needs these to transcribe + analyse</small>
+            <pre class="cmd"><span class="accent">ASSEMBLYAI_API_KEY</span>=...   <span class="comment"># from assemblyai.com/app/account</span>
+<span class="accent">OPENROUTER_API_KEY</span>=...   <span class="comment"># from openrouter.ai/settings/keys</span></pre>
+        </div>
+    </li>
+
+    <li><span class="mark todo">○</span>
+        <div>
+            <strong>5) Smoke-test the new flow</strong>
+            <small>create a Hot Plate task → upload a voice memo → verify transcript + summary appear and the meeting auto-links</small>
+        </div>
+    </li>
+</ul>
+</div>
+
+<!-- ── What's left for Claude ───────────────────────────────── -->
+<h2>What's left for Claude (Phase B — v2 implementation)</h2>
+<div class="card">
+<ul class="check">
+    <li><span class="mark todo">○</span><strong>ClickUp + Trello HTTP clients</strong> — port from legacy-php/config/ to typed C# DTOs with System.Text.Json</li>
+    <li><span class="mark todo">○</span><strong>Canonical hash + field-mapper</strong> — pure functions in <code>GingerSync.Core</code>, fully unit-testable</li>
+    <li><span class="mark todo">○</span><strong>SyncEngine implementation</strong> — content-equality short-circuit, timestamp-aware direction selection, last-write-wins on conflict</li>
+    <li><span class="mark todo">○</span><strong>EF Core repositories</strong> — Mappings / SyncMap / SyncEvents / Tasks (shadow) / Meetings / HotPlate</li>
+    <li><span class="mark todo">○</span><strong>Hosted background services:</strong> <code>ReconcileWorker</code> (5-min cadence) and <code>MeetingProcessorWorker</code> (drives upload→transcribing→analyzing→ready)</li>
+    <li><span class="mark todo">○</span><strong>AssemblyAI + OpenRouter bodies</strong> — replace <code>NotImplementedException</code>s; use Polly for retry + 429 backoff</li>
+    <li><span class="mark todo">○</span><strong>Audio storage</strong> — local disk on Hostinger VPS first (configurable for future S3/Supabase Storage swap)</li>
+    <li><span class="mark todo">○</span><strong>Webhook receivers</strong> — Trello HMAC-SHA1 + ClickUp HMAC-SHA256 verification</li>
+    <li><span class="mark todo">○</span><strong>Auth</strong> — JWT for the SPA, single-user for now, multi-user-ready</li>
+    <li><span class="mark todo">○</span><strong>Web pages</strong> — Dashboard · Hot Plate · Meetings (list + new + detail) · Mappings · Items · Logs · Settings</li>
+    <li><span class="mark todo">○</span><strong>Deploy pipeline</strong> — GitHub Actions → rsync to Hostinger VPS · systemd service + reverse-proxy (Caddy or nginx)</li>
+    <li><span class="mark todo">○</span><strong>Migration cutover</strong> — DNS swap from <code>bqbstudio.com/jupiter/ginger-sync</code> to the Hostinger subdomain, with a brief read-only window for sync_map sanity</li>
+</ul>
+</div>
+
+<!-- ── Open decisions ──────────────────────────────────────── -->
+<h2>Open decisions / blockers</h2>
+<div class="card">
+<ul class="check">
+    <li><span class="mark warn">!</span><strong>Hostinger VPS credentials</strong> — needed before Phase B can fully wire deployment. SSH host + user + path + (optional) domain you want to use (e.g. <code>ginger.bqbstudio.com</code>).</li>
+    <li><span class="mark warn">!</span><strong>.NET 9 SDK on this Mac</strong> — <span class="kbd">brew install --cask dotnet-sdk</span> when you want me to run <code>dotnet build</code> / <code>dotnet test</code> locally.</li>
+    <li><span class="mark todo">○</span><strong>Database location for v2</strong> — option A: reuse the existing Supabase project (shared with Jupiter, fine). Option B: spin up a dedicated Supabase project for Ginger Sync v2 to make a future client handover cleaner. Default = option A.</li>
+    <li><span class="mark todo">○</span><strong>Live recording</strong> — currently <em>upload-only</em>. MediaRecorder + 2-min chunk pattern from Quotinc is sketched but not built. Add in Phase C.</li>
+    <li><span class="mark todo">○</span><strong>Multi-tenancy</strong> — v1 is single-user. v2 schema is single-user but easy to extend (add <code>tenant_id</code> per row + RLS). No customer demand yet.</li>
+</ul>
+</div>
+
+<footer class="bottom">
+    <div>ginger-squirrel-sync · STATUS.html · auto-synced via Google Drive between both Macs</div>
+    <div><a href="https://github.com/b-q-b/ginger-squirrel-sync" target="_blank">github.com/b-q-b/ginger-squirrel-sync</a></div>
+</footer>
+
+</div>
+</body>
+</html>
