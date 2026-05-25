@@ -1,5 +1,6 @@
 using GingerSync.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace GingerSync.Infrastructure.Persistence;
@@ -75,12 +76,19 @@ public sealed class GingerSyncDbContext : DbContext
                : MeetingStatus.Uploaded);
 
         // ── Tables ─────────────────────────────────────────────────────────
-        // ── JSON converter for Dictionary<string,string> stored as jsonb ───
+        // ── JSON converter + value comparer for Dictionary<string,string> ─
         var statusMapConv = new ValueConverter<Dictionary<string, string>, string>(
             v => System.Text.Json.JsonSerializer.Serialize(v ?? new(), (System.Text.Json.JsonSerializerOptions?)null),
             v => string.IsNullOrEmpty(v)
                 ? new Dictionary<string, string>()
                 : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new());
+
+        // EF Core nags about collection types with a converter but no comparer;
+        // give it one so change-tracking deep-compares correctly.
+        var statusMapComparer = new ValueComparer<Dictionary<string, string>>(
+            (a, b) => (a == null && b == null) || (a != null && b != null && a.Count == b.Count && a.OrderBy(kv => kv.Key).SequenceEqual(b.OrderBy(kv => kv.Key))),
+            v => v == null ? 0 : v.OrderBy(kv => kv.Key).Aggregate(0, (h, kv) => HashCode.Combine(h, kv.Key, kv.Value)),
+            v => v == null ? new Dictionary<string, string>() : new Dictionary<string, string>(v));
 
         modelBuilder.Entity<Mapping>(e =>
         {
@@ -92,7 +100,7 @@ public sealed class GingerSyncDbContext : DbContext
             e.Property(x => x.TrelloListId).HasColumnName("trello_list_id");
             e.Property(x => x.ClickUpSpaceId).HasColumnName("clickup_space_id");
             e.Property(x => x.ClickUpListId).HasColumnName("clickup_list_id");
-            e.Property(x => x.StatusMap).HasColumnName("status_map").HasColumnType("jsonb").HasConversion(statusMapConv);
+            e.Property(x => x.StatusMap).HasColumnName("status_map").HasColumnType("jsonb").HasConversion(statusMapConv, statusMapComparer);
             e.Property(x => x.IsActive).HasColumnName("is_active");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
         });

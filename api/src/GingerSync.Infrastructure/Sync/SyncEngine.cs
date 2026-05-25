@@ -235,6 +235,20 @@ public sealed class SyncEngine : ISyncEngine
             }
         }
 
+        // Heartbeat — one summary row per reconcile run per mapping. Lets the
+        // dashboard's "last cron" stat update and gives /logs visible proof
+        // the engine is firing, without the v1 noise of logging every skip.
+        _db.SyncEvents.Add(new SyncEvent
+        {
+            CreatedAt = DateTimeOffset.UtcNow,
+            Source = source,
+            Action = "cycle",
+            MappingId = m.Id,
+            Status = stats.Errors > 0 ? "error" : "ok",
+            Error = stats.Errors > 0 ? $"{stats.Errors} item error(s)" : null,
+            PayloadHash = $"t→cu:{stats.TrelloToClickUp} cu→t:{stats.ClickUpToTrello} skip:{stats.Skipped}",
+        });
+
         // Persist sync_map updates + audit events in one batch
         try
         {
