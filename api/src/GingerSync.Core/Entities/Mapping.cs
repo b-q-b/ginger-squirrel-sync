@@ -6,16 +6,16 @@ namespace GingerSync.Core.Entities;
 public sealed class Mapping
 {
     public Guid Id { get; init; } = Guid.NewGuid();
-    public required string Label { get; init; }
+    public required string Label { get; set; }
 
     public required string TrelloBoardId { get; init; }
-    public string? TrelloListId { get; init; }    // null = whole board
+    public string? TrelloListId { get; set; }     // null = whole board
 
     public required string ClickUpSpaceId { get; init; }
     public required string ClickUpListId { get; init; }
 
     /// <summary>Trello list name → ClickUp status name.</summary>
-    public Dictionary<string, string> StatusMap { get; init; } = new();
+    public Dictionary<string, string> StatusMap { get; set; } = new();
 
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
