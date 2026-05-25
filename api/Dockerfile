@@ -21,11 +21,11 @@ RUN dotnet publish src/GingerSync.Api/GingerSync.Api.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS runtime
 WORKDIR /app
 
-# Non-root user for runtime
-RUN addgroup -S app && adduser -S app -G app
+# The `app` non-root user (UID 1654) is pre-created in the aspnet:9-alpine base
+# image (since .NET 8), so just switch to it.
 USER app
 
-COPY --from=build /app/publish ./
+COPY --from=build --chown=app:app /app/publish ./
 
 ENV ASPNETCORE_URLS=http://+:8080 \
     ASPNETCORE_ENVIRONMENT=Production \
