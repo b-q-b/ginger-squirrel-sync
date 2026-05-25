@@ -32,6 +32,9 @@ services:
       GINGERSYNC_OpenRouter__ApiKey: "${OPENROUTER_API_KEY:-}"
       GINGERSYNC_Auth__JwtSecret: "${GINGERSYNC_Auth__JwtSecret:-}"
       GINGERSYNC_AllowedOrigins__0: "https://ginger-sync.bqbstudio.com"
+      GINGERSYNC_Storage__AudioRoot: "/var/lib/ginger-sync/meetings"
+    volumes:
+      - meetings_audio:/var/lib/ginger-sync/meetings
     networks:
       - root_default
       - internal
@@ -84,3 +87,6 @@ networks:
     external: true
   internal:
     driver: bridge
+
+volumes:
+  meetings_audio:

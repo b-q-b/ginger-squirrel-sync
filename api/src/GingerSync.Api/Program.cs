@@ -18,6 +18,18 @@ builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddGingerSyncInfrastructure(builder.Configuration);
 
+// Meeting audio uploads can be large (long-form recordings).
+const long MaxUploadBytes = 200L * 1024 * 1024;
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
+{
+    o.MultipartBodyLengthLimit = MaxUploadBytes;
+    o.ValueLengthLimit = int.MaxValue;
+});
+builder.Services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(o =>
+{
+    o.Limits.MaxRequestBodySize = MaxUploadBytes;
+});
+
 // Auth — JWT bearer reading from the gss_auth HttpOnly cookie
 var authOpts = builder.Configuration.GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

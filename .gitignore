@@ -20,3 +20,13 @@ __pycache__/
 # Build / temp
 *.log
 *.zip
+
+# .NET build artifacts
+api/**/bin/
+api/**/obj/
+
+# Next.js build artifacts
+web/.next/
+web/node_modules/
+web/tsconfig.tsbuildinfo
+web/next-env.d.ts

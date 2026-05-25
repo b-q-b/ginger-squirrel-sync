@@ -34,6 +34,7 @@ public static class DependencyInjection
         // Sync engine + background reconciler (replaces the v1 PHP cron)
         services.AddScoped<ISyncEngine, SyncEngine>();
         services.AddHostedService<ReconcileWorker>();
+        services.AddHostedService<MeetingProcessorWorker>();
 
         // Typed HTTP clients
         services.AddHttpClient<IClickUpClient, ClickUpClient>();

@@ -61,6 +61,21 @@ public sealed class GingerSyncDbContext : DbContext
                : v == "creative" ? (EnergyLevel?)EnergyLevel.Creative
                : null);
 
+        // jsonb ⇄ MeetingAnalysis (web-style snake_case keys to match v1 PHP storage)
+        var analysisJsonOpts = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        };
+        var analysisConv = new ValueConverter<MeetingAnalysis?, string?>(
+            v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, analysisJsonOpts),
+            v => string.IsNullOrEmpty(v) ? null : System.Text.Json.JsonSerializer.Deserialize<MeetingAnalysis>(v, analysisJsonOpts));
+        var analysisComparer = new ValueComparer<MeetingAnalysis?>(
+            (a, b) => ReferenceEquals(a, b)
+                || (a != null && b != null && System.Text.Json.JsonSerializer.Serialize(a, analysisJsonOpts) == System.Text.Json.JsonSerializer.Serialize(b, analysisJsonOpts)),
+            v => v == null ? 0 : System.Text.Json.JsonSerializer.Serialize(v, analysisJsonOpts).GetHashCode(),
+            v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<MeetingAnalysis>(System.Text.Json.JsonSerializer.Serialize(v, analysisJsonOpts), analysisJsonOpts));
+
         var meetingStatusConv = new ValueConverter<MeetingStatus, string>(
             v => v == MeetingStatus.Transcribing ? "transcribing"
                : v == MeetingStatus.Analyzing   ? "analyzing"
@@ -197,7 +212,7 @@ public sealed class GingerSyncDbContext : DbContext
             e.Property(x => x.SpeakersExpected).HasColumnName("speakers_expected");
             e.Property(x => x.Transcript).HasColumnName("transcript");
             e.Property(x => x.AssemblyAITranscriptId).HasColumnName("assemblyai_transcript_id");
-            e.Property(x => x.Analysis).HasColumnName("analysis").HasColumnType("jsonb");
+            e.Property(x => x.Analysis).HasColumnName("analysis").HasColumnType("jsonb").HasConversion(analysisConv, analysisComparer);
             e.Property(x => x.HotPlateItemId).HasColumnName("hot_plate_item_id");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
