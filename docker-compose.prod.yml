@@ -1,0 +1,74 @@
+# Production stack for ginger-sync.bqbstudio.com — runs behind the
+# existing Traefik on the Hostinger VPS (wildcard *.bqbstudio.com).
+#
+# Networks:
+#   - `traefik` is the external Docker network Traefik watches.
+#     If yours is named differently, change all three `networks:` entries
+#     and the `traefik.docker.network=` label.
+#
+# Cert resolver:
+#   - `mytlschallenge` per your memory note. If your Traefik uses a different
+#     resolver name (e.g. `le` / `letsencrypt`), update both `tls.certresolver`
+#     labels.
+
+services:
+  api:
+    build:
+      context: ./api
+    container_name: ginger-sync-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # ASP.NET maps __ to : when binding configuration sections.
+      GINGERSYNC_ConnectionStrings__Postgres: "${POSTGRES_CONNECTION:-}"
+      GINGERSYNC_Supabase__Url: "${SUPABASE_URL:-}"
+      GINGERSYNC_Supabase__ServiceKey: "${SUPABASE_SERVICE_KEY:-}"
+      GINGERSYNC_ClickUp__Token: "${CLICKUP_TOKEN:-}"
+      GINGERSYNC_Trello__Key: "${TRELLO_KEY:-}"
+      GINGERSYNC_Trello__Token: "${TRELLO_TOKEN:-}"
+      GINGERSYNC_Trello__Secret: "${TRELLO_SECRET:-}"
+      GINGERSYNC_AssemblyAI__ApiKey: "${ASSEMBLYAI_API_KEY:-}"
+      GINGERSYNC_OpenRouter__ApiKey: "${OPENROUTER_API_KEY:-}"
+      GINGERSYNC_AllowedOrigins__0: "https://ginger-sync.bqbstudio.com"
+    networks:
+      - traefik
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # /api/* and /health → API
+      - "traefik.http.routers.gss-api.rule=Host(`ginger-sync.bqbstudio.com`) && (PathPrefix(`/api`) || Path(`/health`))"
+      - "traefik.http.routers.gss-api.entrypoints=websecure"
+      - "traefik.http.routers.gss-api.tls=true"
+      - "traefik.http.routers.gss-api.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.gss-api.loadbalancer.server.port=8080"
+
+  web:
+    build:
+      context: ./web
+      args:
+        # Empty = same-origin; Traefik routes /api/* to the api container above.
+        NEXT_PUBLIC_API_BASE: ""
+    container_name: ginger-sync-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # Everything else → web (catch-all)
+      - "traefik.http.routers.gss-web.rule=Host(`ginger-sync.bqbstudio.com`)"
+      - "traefik.http.routers.gss-web.entrypoints=websecure"
+      - "traefik.http.routers.gss-web.tls=true"
+      - "traefik.http.routers.gss-web.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.gss-web.priority=1"
+      - "traefik.http.services.gss-web.loadbalancer.server.port=3000"
+
+networks:
+  traefik:
+    external: true
+  internal:
+    driver: bridge
