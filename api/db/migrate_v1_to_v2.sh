@@ -30,13 +30,16 @@ echo "────────────────────────�
 echo " v1 → v2 migration — prompts below"
 echo "──────────────────────────────────────────────────────────────"
 echo
-echo "Get the *Transaction pooler* host from each Supabase project:"
-echo "   Project Settings → Database → Connection string → Transaction pooler tab"
-echo "   The host looks like:  aws-0-<region>.pooler.supabase.com"
+echo "Pooler host format:  aws-1-<region>.pooler.supabase.com"
+echo "(newer Supabase deployments use 'aws-1-' prefix; older ones use 'aws-0-')"
+echo "Find your region in Supabase → Project Settings → General → Region."
 echo
 
-read -rp "v1 pooler host (Supabase project ${V1_REF}): " V1_HOST
-read -rp "v2 pooler host (Supabase project ${V2_REF}) [hit Enter to reuse v1's host]: " V2_HOST
+# Known-good default for the current projects (Sydney, Supavisor v1 deployment)
+DEFAULT_HOST="aws-1-ap-southeast-2.pooler.supabase.com"
+read -rp "v1 pooler host (project ${V1_REF}) [Enter for ${DEFAULT_HOST}]: " V1_HOST
+V1_HOST="${V1_HOST:-$DEFAULT_HOST}"
+read -rp "v2 pooler host (project ${V2_REF}) [Enter to reuse v1's host]: " V2_HOST
 V2_HOST="${V2_HOST:-$V1_HOST}"
 
 echo
