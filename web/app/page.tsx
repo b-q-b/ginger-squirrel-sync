@@ -85,7 +85,8 @@ export default function HomePage() {
             { href: "/items", label: "Items", desc: "Synced pairs + orphans" },
             { href: "/hot-plate", label: "Hot Plate", desc: "Personal Kanban" },
             { href: "/meetings", label: "Meetings", desc: "Upload audio → AI summary" },
-            { href: "/settings", label: "Settings", desc: "Tokens, password, webhooks" },
+            { href: "/webhooks", label: "Webhooks", desc: "Live event delivery from Trello + ClickUp" },
+            { href: "/settings", label: "Settings", desc: "Tokens, password, secrets" },
           ].map((m) => (
             <Link
               key={m.href}

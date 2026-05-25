@@ -22,6 +22,7 @@ public sealed class GingerSyncDbContext : DbContext
     public DbSet<HotPlateCategory> HotPlateCategories => Set<HotPlateCategory>();
     public DbSet<Meeting> Meetings => Set<Meeting>();
     public DbSet<SettingEntry> Settings => Set<SettingEntry>();
+    public DbSet<WebhookRegistration> WebhookRegistrations => Set<WebhookRegistration>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -192,6 +193,19 @@ public sealed class GingerSyncDbContext : DbContext
             // Stored as jsonb; we read the raw JSON text and strip quotes in the service layer.
             e.Property(x => x.Value).HasColumnName("value").HasColumnType("jsonb");
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<WebhookRegistration>(e =>
+        {
+            e.ToTable("webhook_registrations");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.Platform).HasColumnName("platform");
+            e.Property(x => x.ExternalId).HasColumnName("external_id");
+            e.Property(x => x.TargetId).HasColumnName("target_id");
+            e.Property(x => x.Status).HasColumnName("status");
+            e.Property(x => x.LastCheckedAt).HasColumnName("last_checked_at");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
         });
 
         modelBuilder.Entity<Meeting>(e =>
