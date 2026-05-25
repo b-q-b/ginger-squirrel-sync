@@ -30,26 +30,15 @@ public sealed record ClickUpTag(string Name, string? TagFg, string? TagBg);
 
 public sealed class ClickUpTaskWrite
 {
-    public required string Name { get; init; }
+    public string? Name { get; init; }
     public string? Description { get; init; }
     public string? Status { get; init; }
+    /// <summary>Unix milliseconds (ClickUp convention).</summary>
     public long? DueDate { get; init; }
     public bool? DueDateTime { get; init; }
-    public IReadOnlyList<ClickUpTag>? Tags { get; init; }
+    public IReadOnlyList<string>? Tags { get; init; }   // ClickUp accepts a flat list of tag names on POST/PUT
 }
 
-/// <summary>Minimal Trello REST surface.</summary>
-public interface ITrelloClient
-{
-    Task<TrelloMember> GetMeAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<TrelloBoard>> GetBoardsAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<TrelloList>> GetListsAsync(string boardId, CancellationToken ct = default);
-    Task<IReadOnlyList<TrelloCard>> GetBoardCardsAsync(string boardId, CancellationToken ct = default);
-    Task<TrelloCard> GetCardAsync(string cardId, CancellationToken ct = default);
-    Task<TrelloCard> CreateCardAsync(TrelloCardWrite payload, CancellationToken ct = default);
-    Task<TrelloCard> UpdateCardAsync(string cardId, TrelloCardWrite payload, CancellationToken ct = default);
-    Task DeleteCardAsync(string cardId, CancellationToken ct = default);
-}
 
 public sealed record TrelloMember(string Id, string Username, string FullName);
 public sealed record TrelloBoard(string Id, string Name, string? ShortUrl);
@@ -74,4 +63,17 @@ public sealed class TrelloCardWrite
     public string? Due { get; init; }
     public string? IdList { get; init; }
     public IReadOnlyList<string>? IdLabels { get; init; }
+}
+
+public interface ITrelloClient
+{
+    Task<TrelloMember> GetMeAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<TrelloBoard>> GetBoardsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<TrelloList>> GetListsAsync(string boardId, CancellationToken ct = default);
+    Task<IReadOnlyList<TrelloCard>> GetBoardCardsAsync(string boardId, CancellationToken ct = default);
+    Task<IReadOnlyList<TrelloCard>> GetListCardsAsync(string listId, CancellationToken ct = default);
+    Task<TrelloCard> GetCardAsync(string cardId, CancellationToken ct = default);
+    Task<TrelloCard> CreateCardAsync(TrelloCardWrite payload, CancellationToken ct = default);
+    Task<TrelloCard> UpdateCardAsync(string cardId, TrelloCardWrite payload, CancellationToken ct = default);
+    Task DeleteCardAsync(string cardId, CancellationToken ct = default);
 }
