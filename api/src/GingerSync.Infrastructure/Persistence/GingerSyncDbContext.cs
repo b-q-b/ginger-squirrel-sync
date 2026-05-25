@@ -27,50 +27,51 @@ public sealed class GingerSyncDbContext : DbContext
         modelBuilder.HasDefaultSchema("ginger_sync");
 
         // ── Enum converters: v1-style lowercase strings ───────────────────
+        // NOTE: ValueConverter takes Expression<Func<>>, so the body must use
+        // only expression-tree-safe constructs (no switch / no ?. / no out-var).
         var syncDirectionConv = new ValueConverter<SyncDirection?, string?>(
-            v => v == null ? null : v == SyncDirection.TrelloToClickUp ? "trello_to_clickup" : "clickup_to_trello",
             v => v == null ? null
-                : v == "trello_to_clickup" ? SyncDirection.TrelloToClickUp
-                : v == "clickup_to_trello" ? SyncDirection.ClickUpToTrello
-                : null);
+               : v == SyncDirection.TrelloToClickUp ? "trello_to_clickup"
+               : "clickup_to_trello",
+            v => v == "trello_to_clickup" ? (SyncDirection?)SyncDirection.TrelloToClickUp
+               : v == "clickup_to_trello" ? (SyncDirection?)SyncDirection.ClickUpToTrello
+               : null);
 
         var hotPlateColumnConv = new ValueConverter<HotPlateColumn, string>(
-            v => v switch {
-                HotPlateColumn.Todo => "todo",
-                HotPlateColumn.InProgress => "in_progress",
-                HotPlateColumn.Waiting => "waiting",
-                HotPlateColumn.Done => "done",
-                _ => "todo",
-            },
-            v => v switch {
-                "in_progress" => HotPlateColumn.InProgress,
-                "waiting" => HotPlateColumn.Waiting,
-                "done" => HotPlateColumn.Done,
-                _ => HotPlateColumn.Todo,
-            });
+            v => v == HotPlateColumn.InProgress ? "in_progress"
+               : v == HotPlateColumn.Waiting   ? "waiting"
+               : v == HotPlateColumn.Done       ? "done"
+               : "todo",
+            v => v == "in_progress" ? HotPlateColumn.InProgress
+               : v == "waiting"     ? HotPlateColumn.Waiting
+               : v == "done"        ? HotPlateColumn.Done
+               : HotPlateColumn.Todo);
 
         var energyLevelConv = new ValueConverter<EnergyLevel?, string?>(
-            v => v?.ToString().ToLowerInvariant(),
-            v => v == null ? null : Enum.TryParse<EnergyLevel>(v, true, out var e) ? e : null);
+            v => v == EnergyLevel.Quick    ? "quick"
+               : v == EnergyLevel.Social   ? "social"
+               : v == EnergyLevel.Deep     ? "deep"
+               : v == EnergyLevel.Creative ? "creative"
+               : null,
+            v => v == "quick"    ? (EnergyLevel?)EnergyLevel.Quick
+               : v == "social"   ? (EnergyLevel?)EnergyLevel.Social
+               : v == "deep"     ? (EnergyLevel?)EnergyLevel.Deep
+               : v == "creative" ? (EnergyLevel?)EnergyLevel.Creative
+               : null);
 
         var meetingStatusConv = new ValueConverter<MeetingStatus, string>(
-            v => v switch {
-                MeetingStatus.Uploaded => "uploaded",
-                MeetingStatus.Transcribing => "transcribing",
-                MeetingStatus.Analyzing => "analyzing",
-                MeetingStatus.Ready => "ready",
-                MeetingStatus.Error => "error",
-                MeetingStatus.AudioOnly => "audio_only",
-                _ => "uploaded",
-            },
-            v => v switch {
-                "transcribing" => MeetingStatus.Transcribing,
-                "analyzing" => MeetingStatus.Analyzing,
-                "ready" => MeetingStatus.Ready,
-                "error" => MeetingStatus.Error,
-                "audio_only" => MeetingStatus.AudioOnly,
-                _ => MeetingStatus.Uploaded,
-            });
+            v => v == MeetingStatus.Transcribing ? "transcribing"
+               : v == MeetingStatus.Analyzing   ? "analyzing"
+               : v == MeetingStatus.Ready       ? "ready"
+               : v == MeetingStatus.Error       ? "error"
+               : v == MeetingStatus.AudioOnly   ? "audio_only"
+               : "uploaded",
+            v => v == "transcribing" ? MeetingStatus.Transcribing
+               : v == "analyzing"   ? MeetingStatus.Analyzing
+               : v == "ready"       ? MeetingStatus.Ready
+               : v == "error"       ? MeetingStatus.Error
+               : v == "audio_only"  ? MeetingStatus.AudioOnly
+               : MeetingStatus.Uploaded);
 
         // ── Tables ─────────────────────────────────────────────────────────
         // ── JSON converter for Dictionary<string,string> stored as jsonb ───
