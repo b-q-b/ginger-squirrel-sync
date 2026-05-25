@@ -40,7 +40,9 @@ EXPOSE 3000
 # Use GET (--spider does HEAD which Next.js 16 doesn't always answer on /).
 # Longer start-period so the first scan happens after Next.js has fully booted —
 # otherwise Traefik sees us as unhealthy and removes the router.
+# Use 127.0.0.1 (not localhost) — alpine resolves localhost to [::1] (IPv6),
+# but Next.js only binds 0.0.0.0:3000 (IPv4). Forces the healthcheck onto IPv4.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD wget -q -O /dev/null http://localhost:3000/ || exit 1
+    CMD wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1
 
 CMD ["node", "server.js"]
