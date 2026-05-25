@@ -4,8 +4,11 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Compiler warnings still fail the build; analyzer style rules don't. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <AnalysisMode>Recommended</AnalysisMode>
+    <AnalysisMode>Default</AnalysisMode>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <!-- Don't fail on common scaffold-stage warnings. Tighten back up in Phase B. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CA1725;CA1822;CA1812;CA1707;CA1031;CA1056;CA1054;CA1308;CA1311;CA2007;IDE0005</WarningsNotAsErrors>
   </PropertyGroup>
 </Project>

@@ -14,19 +14,19 @@ public sealed class GingerSyncDbContext : DbContext
     public DbSet<HotPlateCategory> HotPlateCategories => Set<HotPlateCategory>();
     public DbSet<Meeting> Meetings => Set<Meeting>();
 
-    protected override void OnModelCreating(ModelBuilder b)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // All tables live in the `ginger_sync` Postgres schema.
-        b.HasDefaultSchema("ginger_sync");
+        modelBuilder.HasDefaultSchema("ginger_sync");
 
-        b.Entity<Mapping>(e =>
+        modelBuilder.Entity<Mapping>(e =>
         {
             e.ToTable("mappings");
             e.HasKey(x => x.Id);
             e.Property(x => x.StatusMap).HasColumnType("jsonb");
         });
 
-        b.Entity<SyncMap>(e =>
+        modelBuilder.Entity<SyncMap>(e =>
         {
             e.ToTable("sync_map");
             e.HasKey(x => x.Id);
@@ -35,7 +35,7 @@ public sealed class GingerSyncDbContext : DbContext
             e.Property(x => x.LastDirection).HasConversion<string>();
         });
 
-        b.Entity<SyncEvent>(e =>
+        modelBuilder.Entity<SyncEvent>(e =>
         {
             e.ToTable("sync_events");
             e.HasKey(x => x.Id);
@@ -43,13 +43,13 @@ public sealed class GingerSyncDbContext : DbContext
             e.HasIndex(x => x.CreatedAt).IsDescending();
         });
 
-        b.Entity<HotPlateCategory>(e =>
+        modelBuilder.Entity<HotPlateCategory>(e =>
         {
             e.ToTable("hot_plate_categories");
             e.HasKey(x => x.Id);
         });
 
-        b.Entity<HotPlateItem>(e =>
+        modelBuilder.Entity<HotPlateItem>(e =>
         {
             e.ToTable("hot_plate_items");
             e.HasKey(x => x.Id);
@@ -58,7 +58,7 @@ public sealed class GingerSyncDbContext : DbContext
             e.Property(x => x.EnergyLevel).HasConversion<string?>();
         });
 
-        b.Entity<Meeting>(e =>
+        modelBuilder.Entity<Meeting>(e =>
         {
             e.ToTable("meetings");
             e.HasKey(x => x.Id);
