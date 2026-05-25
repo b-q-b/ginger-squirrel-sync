@@ -1,5 +1,9 @@
+using System.Text;
 using GingerSync.Api.Endpoints;
 using GingerSync.Infrastructure;
+using GingerSync.Infrastructure.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +18,38 @@ builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddGingerSyncInfrastructure(builder.Configuration);
 
-// CORS — React frontend in dev (Vite/Next) and the deployed origin
+// Auth — JWT bearer reading from the gss_auth HttpOnly cookie
+var authOpts = builder.Configuration.GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(opts =>
+    {
+        opts.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = authOpts.Issuer,
+            ValidateAudience = true,
+            ValidAudience = authOpts.Audience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = string.IsNullOrEmpty(authOpts.JwtSecret)
+                ? new SymmetricSecurityKey(new byte[32])  // placeholder — will reject all tokens
+                : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOpts.JwtSecret)),
+            ClockSkew = TimeSpan.FromMinutes(2),
+        };
+        // Read JWT from the cookie instead of the Authorization header
+        opts.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                if (ctx.Request.Cookies.TryGetValue(authOpts.CookieName, out var token))
+                    ctx.Token = token;
+                return Task.CompletedTask;
+            },
+        };
+    });
+builder.Services.AddAuthorization();
+
+// CORS — only needed for cross-origin dev. Production runs api + web on the same host.
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(opts =>
     opts.AddDefaultPolicy(p => p
@@ -32,14 +67,17 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 // ── Endpoints ─────────────────────────────────────────────────
 app.MapGet("/health", () => Results.Ok(new { ok = true, version = "0.1.0" }))
     .WithName("Health")
-    .WithDescription("Liveness probe.");
+    .AllowAnonymous();
 
+app.MapAuthEndpoints();
 app.MapMappingsEndpoints();
 app.MapHotPlateEndpoints();
 app.MapMeetingsEndpoints();

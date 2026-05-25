@@ -30,6 +30,7 @@ services:
       GINGERSYNC_Trello__Secret: "${TRELLO_SECRET:-}"
       GINGERSYNC_AssemblyAI__ApiKey: "${ASSEMBLYAI_API_KEY:-}"
       GINGERSYNC_OpenRouter__ApiKey: "${OPENROUTER_API_KEY:-}"
+      GINGERSYNC_Auth__JwtSecret: "${GINGERSYNC_Auth__JwtSecret:-}"
       GINGERSYNC_AllowedOrigins__0: "https://ginger-sync.bqbstudio.com"
     networks:
       - root_default

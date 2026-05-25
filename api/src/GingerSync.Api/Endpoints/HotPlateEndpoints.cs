@@ -6,8 +6,8 @@ public static class HotPlateEndpoints
 {
     public static void MapHotPlateEndpoints(this IEndpointRouteBuilder app)
     {
-        var items = app.MapGroup("/api/hot-plate/items").WithTags("Hot Plate");
-        var cats = app.MapGroup("/api/hot-plate/categories").WithTags("Hot Plate");
+        var items = app.MapGroup("/api/hot-plate/items").WithTags("Hot Plate").RequireAuthorization();
+        var cats = app.MapGroup("/api/hot-plate/categories").WithTags("Hot Plate").RequireAuthorization();
 
         items.MapGet("/", () => Results.Ok(Array.Empty<HotPlateItem>()));
         items.MapPost("/", (HotPlateItem item) => Results.Created($"/api/hot-plate/items/{item.Id}", item));

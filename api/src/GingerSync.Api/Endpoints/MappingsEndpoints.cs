@@ -8,7 +8,7 @@ public static class MappingsEndpoints
 {
     public static void MapMappingsEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/mappings").WithTags("Mappings");
+        var group = app.MapGroup("/api/mappings").WithTags("Mappings").RequireAuthorization();
 
         group.MapGet("/", async (GingerSyncDbContext db, CancellationToken ct) =>
         {

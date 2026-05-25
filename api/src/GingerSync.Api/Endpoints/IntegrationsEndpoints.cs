@@ -7,7 +7,7 @@ public static class IntegrationsEndpoints
 {
     public static void MapIntegrationsEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/integrations").WithTags("Integrations");
+        var group = app.MapGroup("/api/integrations").WithTags("Integrations").RequireAuthorization();
 
         group.MapGet("/clickup", async (IClickUpClient cu, CancellationToken ct) =>
         {

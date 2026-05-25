@@ -7,7 +7,7 @@ public static class SyncEndpoints
 {
     public static void MapSyncEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/sync").WithTags("Sync");
+        var group = app.MapGroup("/api/sync").WithTags("Sync").RequireAuthorization();
 
         group.MapGet("/events", async (
             GingerSyncDbContext db,

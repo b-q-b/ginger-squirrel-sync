@@ -1,4 +1,5 @@
 using GingerSync.Core.Services;
+using GingerSync.Infrastructure.Auth;
 using GingerSync.Infrastructure.External;
 using GingerSync.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,10 @@ public static class DependencyInjection
         services.Configure<OpenRouterOptions>(config.GetSection("OpenRouter"));
         services.Configure<StorageOptions>(config.GetSection("Storage"));
         services.Configure<SyncOptions>(config.GetSection("Sync"));
+        services.Configure<AuthOptions>(config.GetSection("Auth"));
+
+        // Auth
+        services.AddScoped<IAuthService, JwtAuthService>();
 
         // Typed HTTP clients
         services.AddHttpClient<IClickUpClient, ClickUpClient>();

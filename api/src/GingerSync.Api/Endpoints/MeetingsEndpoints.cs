@@ -6,7 +6,7 @@ public static class MeetingsEndpoints
 {
     public static void MapMeetingsEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/meetings").WithTags("Meetings");
+        var group = app.MapGroup("/api/meetings").WithTags("Meetings").RequireAuthorization();
 
         group.MapGet("/", () => Results.Ok(Array.Empty<Meeting>()))
             .WithDescription("List meetings (latest first).");

@@ -20,6 +20,7 @@ public sealed class GingerSyncDbContext : DbContext
     public DbSet<HotPlateItem> HotPlateItems => Set<HotPlateItem>();
     public DbSet<HotPlateCategory> HotPlateCategories => Set<HotPlateCategory>();
     public DbSet<Meeting> Meetings => Set<Meeting>();
+    public DbSet<SettingEntry> Settings => Set<SettingEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -158,6 +159,16 @@ public sealed class GingerSyncDbContext : DbContext
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
             e.Property(x => x.DeletedAt).HasColumnName("deleted_at");
+        });
+
+        modelBuilder.Entity<SettingEntry>(e =>
+        {
+            e.ToTable("settings");
+            e.HasKey(x => x.Key);
+            e.Property(x => x.Key).HasColumnName("key");
+            // Stored as jsonb; we read the raw JSON text and strip quotes in the service layer.
+            e.Property(x => x.Value).HasColumnName("value").HasColumnType("jsonb");
+            e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
         });
 
         modelBuilder.Entity<Meeting>(e =>
