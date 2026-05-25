@@ -56,7 +56,7 @@ echo "── Dumping v1 ginger_sync schema → ${DUMP_FILE} ──────�
 docker run --rm \
     -e PGPASSWORD="${V1_PASSWORD}" \
     -v /tmp:/tmp \
-    postgres:16-alpine \
+    postgres:17-alpine \
     pg_dump \
         --host="${V1_HOST}" \
         --port="${PORT}" \
@@ -75,7 +75,7 @@ echo "── Restoring into v2 (${V2_REF}) ────────────�
 docker run --rm \
     -e PGPASSWORD="${V2_PASSWORD}" \
     -v "${DUMP_FILE}":"${DUMP_FILE}":ro \
-    postgres:16-alpine \
+    postgres:17-alpine \
     psql \
         --host="${V2_HOST}" \
         --port="${PORT}" \
@@ -87,7 +87,7 @@ docker run --rm \
 # ── 3. Verify row counts ────────────────────────────────────────
 echo
 echo "── v2 row counts (post-restore) ─────────────────────────────"
-docker run --rm -e PGPASSWORD="${V2_PASSWORD}" postgres:16-alpine \
+docker run --rm -e PGPASSWORD="${V2_PASSWORD}" postgres:17-alpine \
     psql -h "${V2_HOST}" -p "${PORT}" -U "${V2_USER}" -d "${V2_DB}" -c "
     SELECT 'mappings'              AS tbl, count(*) FROM ginger_sync.mappings              UNION ALL
     SELECT 'sync_map',              count(*) FROM ginger_sync.sync_map                     UNION ALL
