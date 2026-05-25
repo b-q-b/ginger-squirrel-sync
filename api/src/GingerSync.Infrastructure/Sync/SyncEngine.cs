@@ -263,11 +263,163 @@ public sealed class SyncEngine : ISyncEngine
         return new ReconcileResult(stats.TrelloToClickUp, stats.ClickUpToTrello, stats.Skipped, stats.Errors);
     }
 
-    public Task<SyncResult> SyncTrelloCardToClickUpAsync(Mapping mapping, string trelloCardId, string source, CancellationToken ct = default)
-        => throw new NotImplementedException("Webhook-driven single-card sync arrives in slice 3c.");
+    public async Task<SyncResult> SyncTrelloCardToClickUpAsync(Mapping m, string trelloCardId, string source, CancellationToken ct = default)
+    {
+        try
+        {
+            var card = await _tr.GetCardAsync(trelloCardId, ct);
+            var trelloLists = await _tr.GetListsAsync(m.TrelloBoardId, ct);
+            var listNamesById = trelloLists.ToDictionary(l => l.Id, l => l.Name);
 
-    public Task<SyncResult> SyncClickUpTaskToTrelloAsync(Mapping mapping, string clickupTaskId, string source, CancellationToken ct = default)
-        => throw new NotImplementedException();
+            var sm = await _db.SyncMaps.FirstOrDefaultAsync(
+                s => s.MappingId == m.Id && s.TrelloCardId == trelloCardId && s.DeletedAt == null, ct);
+
+            var canon = CanonicalHash.FromTrello(card, m.StatusMap, listNamesById);
+            var hash = CanonicalHash.Compute(canon);
+
+            // Echo guard — if this content matches what we last wrote, skip
+            if (sm != null && sm.LastHash == hash)
+            {
+                return new SyncResult(SyncAction.SkippedHash, null);
+            }
+
+            var payload = FieldMapper.TrelloCardToClickUp(card, m.StatusMap, listNamesById);
+            ClickUpTask cuTask;
+            SyncAction action;
+            string? cuTaskId;
+
+            if (sm?.ClickUpTaskId is null)
+            {
+                cuTask = await _cu.CreateTaskAsync(m.ClickUpListId, payload, ct);
+                cuTaskId = cuTask.Id;
+                action = SyncAction.Created;
+                if (sm is null)
+                {
+                    _db.SyncMaps.Add(new SyncMap
+                    {
+                        Id = Guid.NewGuid(),
+                        MappingId = m.Id,
+                        TrelloCardId = trelloCardId,
+                        ClickUpTaskId = cuTaskId,
+                        LastHash = hash,
+                        LastDirection = SyncDirection.TrelloToClickUp,
+                        LastSyncedAt = DateTimeOffset.UtcNow,
+                    });
+                }
+                else
+                {
+                    sm.ClickUpTaskId = cuTaskId;
+                    sm.LastHash = hash;
+                    sm.LastDirection = SyncDirection.TrelloToClickUp;
+                    sm.LastSyncedAt = DateTimeOffset.UtcNow;
+                }
+            }
+            else
+            {
+                cuTask = await _cu.UpdateTaskAsync(sm.ClickUpTaskId, payload, ct);
+                cuTaskId = sm.ClickUpTaskId;
+                action = SyncAction.Updated;
+                sm.LastHash = hash;
+                sm.LastDirection = SyncDirection.TrelloToClickUp;
+                sm.LastSyncedAt = DateTimeOffset.UtcNow;
+            }
+
+            LogEvent(m.Id, source, SyncDirection.TrelloToClickUp,
+                action == SyncAction.Created ? "create" : "update",
+                trelloCardId, cuTaskId, "ok", null, hash);
+            await _db.SaveChangesAsync(ct);
+            return new SyncResult(action, null);
+        }
+        catch (Exception ex)
+        {
+            LogEvent(m.Id, source, SyncDirection.TrelloToClickUp, "error", trelloCardId, null, "error", ex.Message, null);
+            try { await _db.SaveChangesAsync(ct); } catch { /* best effort */ }
+            return new SyncResult(SyncAction.Error, ex.Message);
+        }
+    }
+
+    public async Task<SyncResult> SyncClickUpTaskToTrelloAsync(Mapping m, string clickupTaskId, string source, CancellationToken ct = default)
+    {
+        try
+        {
+            var task = await _cu.GetTaskAsync(clickupTaskId, ct);
+            if (!string.IsNullOrEmpty(task.Parent))
+            {
+                // Subtasks aren't synced to Trello in v1 either — bail without an event
+                return new SyncResult(SyncAction.SkippedEcho, "subtask, not synced");
+            }
+
+            var trelloLists = await _tr.GetListsAsync(m.TrelloBoardId, ct);
+            var listsByName = trelloLists.ToDictionary(l => l.Name, l => l.Id, StringComparer.Ordinal);
+            var defaultTrelloListId = !string.IsNullOrEmpty(m.TrelloListId)
+                ? m.TrelloListId!
+                : (trelloLists.FirstOrDefault()?.Id ?? "");
+
+            var sm = await _db.SyncMaps.FirstOrDefaultAsync(
+                s => s.MappingId == m.Id && s.ClickUpTaskId == clickupTaskId && s.DeletedAt == null, ct);
+
+            var canon = CanonicalHash.FromClickUp(task, m.StatusMap);
+            var hash = CanonicalHash.Compute(canon);
+
+            if (sm != null && sm.LastHash == hash)
+            {
+                return new SyncResult(SyncAction.SkippedHash, null);
+            }
+
+            var payload = FieldMapper.ClickUpTaskToTrello(task, m.StatusMap, listsByName, defaultTrelloListId);
+            TrelloCard card;
+            SyncAction action;
+            string? trelloCardId;
+
+            if (sm?.TrelloCardId is null)
+            {
+                card = await _tr.CreateCardAsync(payload, ct);
+                trelloCardId = card.Id;
+                action = SyncAction.Created;
+                if (sm is null)
+                {
+                    _db.SyncMaps.Add(new SyncMap
+                    {
+                        Id = Guid.NewGuid(),
+                        MappingId = m.Id,
+                        TrelloCardId = trelloCardId,
+                        ClickUpTaskId = clickupTaskId,
+                        LastHash = hash,
+                        LastDirection = SyncDirection.ClickUpToTrello,
+                        LastSyncedAt = DateTimeOffset.UtcNow,
+                    });
+                }
+                else
+                {
+                    sm.TrelloCardId = trelloCardId;
+                    sm.LastHash = hash;
+                    sm.LastDirection = SyncDirection.ClickUpToTrello;
+                    sm.LastSyncedAt = DateTimeOffset.UtcNow;
+                }
+            }
+            else
+            {
+                card = await _tr.UpdateCardAsync(sm.TrelloCardId, payload, ct);
+                trelloCardId = sm.TrelloCardId;
+                action = SyncAction.Updated;
+                sm.LastHash = hash;
+                sm.LastDirection = SyncDirection.ClickUpToTrello;
+                sm.LastSyncedAt = DateTimeOffset.UtcNow;
+            }
+
+            LogEvent(m.Id, source, SyncDirection.ClickUpToTrello,
+                action == SyncAction.Created ? "create" : "update",
+                trelloCardId, clickupTaskId, "ok", null, hash);
+            await _db.SaveChangesAsync(ct);
+            return new SyncResult(action, null);
+        }
+        catch (Exception ex)
+        {
+            LogEvent(m.Id, source, SyncDirection.ClickUpToTrello, "error", null, clickupTaskId, "error", ex.Message, null);
+            try { await _db.SaveChangesAsync(ct); } catch { /* best effort */ }
+            return new SyncResult(SyncAction.Error, ex.Message);
+        }
+    }
 
     private void LogEvent(Guid mappingId, string source, SyncDirection? direction, string action,
         string? trelloCardId, string? clickUpTaskId, string status, string? error, string? payloadHash)
