@@ -1,7 +1,9 @@
 using GingerSync.Core.Services;
 using GingerSync.Infrastructure.Auth;
 using GingerSync.Infrastructure.External;
+using GingerSync.Infrastructure.Hosting;
 using GingerSync.Infrastructure.Persistence;
+using GingerSync.Infrastructure.Sync;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +30,10 @@ public static class DependencyInjection
 
         // Auth
         services.AddScoped<IAuthService, JwtAuthService>();
+
+        // Sync engine + background reconciler (replaces the v1 PHP cron)
+        services.AddScoped<ISyncEngine, SyncEngine>();
+        services.AddHostedService<ReconcileWorker>();
 
         // Typed HTTP clients
         services.AddHttpClient<IClickUpClient, ClickUpClient>();

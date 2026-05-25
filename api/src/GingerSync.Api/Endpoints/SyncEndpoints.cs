@@ -64,7 +64,36 @@ public static class SyncEndpoints
         group.MapGet("/items", (Guid? mappingId, bool live) => Results.Ok(Array.Empty<object>()))
             .WithDescription("Unified items view (placeholder; populated in slice 3).");
 
-        group.MapPost("/reconcile", (string? key) => Results.Ok(new { mappings = 0, note = "reconciler arrives in slice 3" }))
-            .WithDescription("Run reconcile across all active mappings (slice 3).");
+        group.MapPost("/reconcile", async (
+            GingerSyncDbContext db,
+            GingerSync.Core.Services.ISyncEngine engine,
+            CancellationToken ct) =>
+        {
+            var mappings = await db.Mappings.AsNoTracking()
+                .Where(m => m.IsActive)
+                .ToListAsync(ct);
+            int totalT = 0, totalC = 0, totalS = 0, totalE = 0;
+            foreach (var m in mappings)
+            {
+                try
+                {
+                    var r = await engine.ReconcileMappingAsync(m, "manual_all", ct);
+                    totalT += r.TrelloToClickUp;
+                    totalC += r.ClickUpToTrello;
+                    totalS += r.Skipped;
+                    totalE += r.Errors;
+                }
+                catch { totalE++; }
+            }
+            return Results.Ok(new
+            {
+                ok = totalE == 0,
+                mappings = mappings.Count,
+                trelloToClickUp = totalT,
+                clickUpToTrello = totalC,
+                skipped = totalS,
+                errors = totalE,
+            });
+        }).WithDescription("Force-reconcile every active mapping. The hosted ReconcileWorker does this every Sync:ReconcileIntervalMinutes minutes automatically.");
     }
 }

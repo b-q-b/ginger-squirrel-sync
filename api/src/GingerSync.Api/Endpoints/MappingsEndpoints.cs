@@ -71,12 +71,27 @@ public static class MappingsEndpoints
             return rows > 0 ? Results.NoContent() : Results.NotFound();
         });
 
-        group.MapPost("/{id:guid}/sync", async (Guid id, GingerSyncDbContext db, CancellationToken ct) =>
+        group.MapPost("/{id:guid}/sync", async (Guid id, GingerSyncDbContext db, GingerSync.Core.Services.ISyncEngine engine, CancellationToken ct) =>
         {
             var entity = await db.Mappings.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id, ct);
             if (entity is null) return Results.NotFound();
-            // TODO: invoke the sync engine. Stubbed until Slice 3.
-            return Results.Ok(new { ok = true, note = "sync engine arrives in slice 3" });
+
+            try
+            {
+                var result = await engine.ReconcileMappingAsync(entity, "manual", ct);
+                return Results.Ok(new
+                {
+                    ok = result.Errors == 0,
+                    trelloToClickUp = result.TrelloToClickUp,
+                    clickUpToTrello = result.ClickUpToTrello,
+                    skipped = result.Skipped,
+                    errors = result.Errors,
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Json(new { ok = false, error = ex.Message }, statusCode: 500);
+            }
         });
     }
 }
