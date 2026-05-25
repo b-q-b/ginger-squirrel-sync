@@ -37,7 +37,10 @@ COPY --from=build --chown=app:app /app/public ./public
 
 USER app
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD wget -q --spider http://localhost:3000/ || exit 1
+# Use GET (--spider does HEAD which Next.js 16 doesn't always answer on /).
+# Longer start-period so the first scan happens after Next.js has fully booted —
+# otherwise Traefik sees us as unhealthy and removes the router.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD wget -q -O /dev/null http://localhost:3000/ || exit 1
 
 CMD ["node", "server.js"]
