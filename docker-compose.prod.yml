@@ -37,9 +37,19 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=root_default"
-      # /api/* and /health → API
+      # ── Security headers + HTTPS redirect middleware (shared by both routers) ──
+      - "traefik.http.middlewares.gss-sec.headers.SSLHost=ginger-sync.bqbstudio.com"
+      - "traefik.http.middlewares.gss-sec.headers.SSLRedirect=true"
+      - "traefik.http.middlewares.gss-sec.headers.STSSeconds=315360000"
+      - "traefik.http.middlewares.gss-sec.headers.STSIncludeSubdomains=true"
+      - "traefik.http.middlewares.gss-sec.headers.STSPreload=true"
+      - "traefik.http.middlewares.gss-sec.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.gss-sec.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.gss-sec.headers.browserXSSFilter=true"
+      # /api/* and /health → API (both HTTP entrypoints, middleware does the redirect)
       - "traefik.http.routers.gss-api.rule=Host(`ginger-sync.bqbstudio.com`) && (PathPrefix(`/api`) || Path(`/health`))"
-      - "traefik.http.routers.gss-api.entrypoints=websecure"
+      - "traefik.http.routers.gss-api.entrypoints=web,websecure"
+      - "traefik.http.routers.gss-api.middlewares=gss-sec@docker"
       - "traefik.http.routers.gss-api.tls=true"
       - "traefik.http.routers.gss-api.tls.certresolver=mytlschallenge"
       - "traefik.http.services.gss-api.loadbalancer.server.port=8080"
@@ -61,7 +71,8 @@ services:
       - "traefik.docker.network=root_default"
       # Everything else → web (catch-all)
       - "traefik.http.routers.gss-web.rule=Host(`ginger-sync.bqbstudio.com`)"
-      - "traefik.http.routers.gss-web.entrypoints=websecure"
+      - "traefik.http.routers.gss-web.entrypoints=web,websecure"
+      - "traefik.http.routers.gss-web.middlewares=gss-sec@docker"
       - "traefik.http.routers.gss-web.tls=true"
       - "traefik.http.routers.gss-web.tls.certresolver=mytlschallenge"
       - "traefik.http.routers.gss-web.priority=1"
