@@ -1,10 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiSend, ApiError } from "@/lib/api";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginShell><div className="text-(--color-muted) text-sm">Loading…</div></LoginShell>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-(--color-bg) p-8">
+      <div className="w-full max-w-sm bg-(--color-surface) border border-(--color-border) rounded-2xl p-8 shadow-sm">
+        <h1 className="text-2xl font-bold mb-1">Ginger Sync</h1>
+        <p className="text-sm text-(--color-muted) mb-6">Sign in to continue.</p>
+        {children}
+      </div>
+    </main>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const next = search.get("next") || "/";
@@ -37,11 +57,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-(--color-bg) p-8">
-      <form onSubmit={onSubmit} className="w-full max-w-sm bg-(--color-surface) border border-(--color-border) rounded-2xl p-8 shadow-sm">
-        <h1 className="text-2xl font-bold mb-1">Ginger Sync</h1>
-        <p className="text-sm text-(--color-muted) mb-6">Sign in to continue.</p>
-
+    <LoginShell>
+      <form onSubmit={onSubmit}>
         <label className="block text-xs uppercase tracking-wider text-(--color-muted) mb-2">Password</label>
         <input
           type="password"
@@ -66,6 +83,6 @@ export default function LoginPage() {
           {submitting ? "Signing in…" : "Sign in"}
         </button>
       </form>
-    </main>
+    </LoginShell>
   );
 }
