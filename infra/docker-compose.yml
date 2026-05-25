@@ -11,7 +11,9 @@ services:
       - "5433:5432"   # 5433 host-side to avoid clashing with a Supabase tunnel
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ../api/db/migrations:/docker-entrypoint-initdb.d:ro
+      # No init scripts — production schema lives in Supabase (migrated from v1
+      # via api/db/migrate_v1_to_v2.sh). For local dev, dump the v2 schema once
+      # and mount it here if you need an offline copy.
 
 volumes:
   pgdata:
