@@ -45,5 +45,6 @@ app.MapHotPlateEndpoints();
 app.MapMeetingsEndpoints();
 app.MapSyncEndpoints();
 app.MapWebhookEndpoints();
+app.MapIntegrationsEndpoints();
 
 app.Run();

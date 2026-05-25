@@ -16,6 +16,29 @@ export interface Mapping {
   createdAt: string;
 }
 
+export interface SyncEvent {
+  id: number;
+  createdAt: string;
+  source: string;
+  direction: SyncDirection | null;
+  action: string;
+  trelloCardId: string | null;
+  clickUpTaskId: string | null;
+  mappingId: Uuid | null;
+  status: "ok" | "error" | "skipped" | string;
+  error: string | null;
+  payloadHash: string | null;
+}
+
+export interface SyncStats {
+  totalMappings: number;
+  activeMappings: number;
+  totalEvents: number;
+  events24h: number;
+  errors24h: number;
+  lastCronAt: string | null;
+}
+
 export type HotPlateColumn = "Todo" | "InProgress" | "Waiting" | "Done";
 export type Priority = 1 | 2 | 3 | 4;
 export type EnergyLevel = "Quick" | "Social" | "Deep" | "Creative";
@@ -62,4 +85,11 @@ export interface MeetingAnalysis {
   decisions: { text: string }[];
   actionItems: { title: string; owner: string | null; due: string | null; context: string | null }[];
   questions: { question: string; context: string | null }[];
+}
+
+export interface IntegrationResult {
+  ok: boolean;
+  user?: { id?: number | string; username?: string; email?: string; fullName?: string };
+  boards?: number;
+  error?: string;
 }

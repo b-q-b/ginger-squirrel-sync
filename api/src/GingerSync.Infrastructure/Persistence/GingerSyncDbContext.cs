@@ -73,6 +73,13 @@ public sealed class GingerSyncDbContext : DbContext
             });
 
         // ── Tables ─────────────────────────────────────────────────────────
+        // ── JSON converter for Dictionary<string,string> stored as jsonb ───
+        var statusMapConv = new ValueConverter<Dictionary<string, string>, string>(
+            v => System.Text.Json.JsonSerializer.Serialize(v ?? new(), (System.Text.Json.JsonSerializerOptions?)null),
+            v => string.IsNullOrEmpty(v)
+                ? new Dictionary<string, string>()
+                : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new());
+
         modelBuilder.Entity<Mapping>(e =>
         {
             e.ToTable("mappings");
@@ -83,7 +90,7 @@ public sealed class GingerSyncDbContext : DbContext
             e.Property(x => x.TrelloListId).HasColumnName("trello_list_id");
             e.Property(x => x.ClickUpSpaceId).HasColumnName("clickup_space_id");
             e.Property(x => x.ClickUpListId).HasColumnName("clickup_list_id");
-            e.Property(x => x.StatusMap).HasColumnName("status_map").HasColumnType("jsonb");
+            e.Property(x => x.StatusMap).HasColumnName("status_map").HasColumnType("jsonb").HasConversion(statusMapConv);
             e.Property(x => x.IsActive).HasColumnName("is_active");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
         });
